@@ -8,21 +8,21 @@ import numpy as np
 df = pd.read_csv("Vertebral.csv")
 df.head()
 
-#coloca o uma fração do dataframe em df de froma aleatória, como frac=1 coloca tudo
+#mistura os dados no dataframe
 df.sample(frac=1)
-#cria um data frame temporario sem a coluna da classe
+
+#cria um data frame sem a coluna da classe
 df_temp = pd.DataFrame(df,columns=df.columns[:-1])
 
 
-#separa o dataframe sem a classe em treino teste e validacao
+#separa o dataframe sem a classe em treino(50%) teste(25%) e validacao(25%)
 from sklearn.model_selection import train_test_split
-x_treino,x_teste,y_treino,y_teste=train_test_split(df_temp,df['Class'],test_size=0.5,train_size=0.5)
-x_treino,x_validacao,y_treino,y_validacao=train_test_split(x_teste,df['Class'],test_size=0.5,train_size=0.5)
+x_treino, x_resto, y_treino, y_resto=train_test_split(df_temp,df['Class'],test_size=0.5,train_size=0.5, stratify=df['Class'])
+x_validacao, x_teste, y_validacao, y_teste = train_test_split(x_resto, y_resto, test_size=0.5, stratify=y_resto)
 
-
-x_treino.info()
 x_teste.info()
 x_validacao.info()
+x_treino.info()
 
 # In[19]:
 
