@@ -1,95 +1,69 @@
-# In[]
-
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
+import statistics
+import math
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 
+from sklearn.neighbors import KNeighborsClassifier # KNN
+from sklearn.tree import DecisionTreeClassifier, export_graphviz # Árvore de decisão
+from sklearn.naive_bayes import GaussianNB # Naive Bayes
+from sklearn.svm import SVC # SVM
+from sklearn.neural_network import MLPClassifier # MLP
 
+#Importa a base
 df = pd.read_csv("Vertebral.csv")
-df.head()
-
-#mistura os dados no dataframe
-df.sample(frac=1)
-
-#cria um data frame sem a coluna da classe
+#cria um dataframe somente com a coluna das classes
+df_class = pd.DataFrame(df,columns=['Class'])
+##cria um dataframe sem a coluna das classes
 df_temp = pd.DataFrame(df,columns=df.columns[:-1])
 
 
-#separa o dataframe sem a classe em treino(50%) teste(25%) e validacao(25%)
-from sklearn.model_selection import train_test_split
-x_treino, x_resto, y_treino, y_resto=train_test_split(df_temp,df['Class'],test_size=0.5,train_size=0.5, stratify=df['Class'])
-x_validacao, x_teste, y_validacao, y_teste = train_test_split(x_resto, y_resto, test_size=0.5, stratify=y_resto)
+df.head()
+df_temp.plot()
+df_class.plot()
 
-x_teste.info()
-x_validacao.info()
-x_treino.info()
+x_treino, x_resto, y_treino, y_resto = train_test_split(df_temp,df['Class'],test_size=0.5, stratify=df['Class'], shuffle=True)
+x_validacao, x_teste, y_validacao, y_teste = train_test_split(x_resto, y_resto, test_size=0.5, stratify=y_resto, shuffle=True)
 
-# In[19]:
+print("Dataframe 100%")
+print(df.shape)
 
-from sklearn.neighbors import KNeighborsClassifier
-knn = KNeighborsClassifier(n_neighbors=1)
-knn.fit(x_treino,y_treino)
+print("Treino 50%")
+print(x_treino.shape)
 
+print("Teste 25%")
+print(x_teste.shape)
 
+print("Validação 25%")
+print(x_validacao.shape)
 
+print("MLP")
+# Inicializa um array para acuracia
+acuracia = []
 
+# Varia as épocas de treino de 100 em 100 até 10000
+# Varia camadas escondidades de 50 em 50 até 5000
+# Varia as taxas de aprnedizagem de 0.0 ate 1.0
+# Testa todos com todos
+for i in range (10):
+    for j in range (5):
+        for k in range (5):
+            mlp = MLPClassifier(max_iter=((k+1)*200) , hidden_layer_sizes=((j+1)*100), learning_rate_init=((i+1)/10) )
+            mlp.fit(x_treino, y_treino)
+            pred = mlp.predict(x_validacao)
+            acuracia.append(accuracy_score(y_validacao, pred))
 
-pred = knn.predict(x_teste)
-pred
+melhor_mlp = np.argmax(acuracia)+1
+print("Acurácias: ",*acuracia, sep=' | ')
 
-
-# In[22]:
-
-
-from sklearn.metrics import classification_report, confusion_matrix
-print(classification_report(y_teste,pred))
-
-
-# In[23]:
-
-
-confusion_matrix(y_teste,pred)
-
-
-# In[24]:
-
-
-from sklearn import metrics
-fpr, tpr, thresholds = metrics.roc_curve(y_teste,pred,pos_label=2)
-metrics.auc(fpr,tpr)
-
-
-# In[26]:
-
-
-tx_erro = []
-for i in range (1,50):
-    knn = KNeighborsClassifier(n_neighbors=i)
-    knn.fit(x_treino,y_treino)
-    pred = knn.predict(x_teste)
-    tx_erro.append(np.mean(pred!=y_teste))
-tx_erro 
-    
-
-
-# In[28]:
-
-
-plt.figure (figsize=(14,8))
-plt.plot(range(1,50),tx_erro,color='blue',linestyle='dashed',marker='o')
-plt.xlabel('K')
-plt.ylabel('Erro')
-
-
-# In[30]:
-
-
-min(tx_erro)
-np.argmin(tx_erro)+1
-
-
-# In[ ]:
-
-
-
-
+melhor_epoca_treino = (melhor_mlp%5)*200 
+melhor_camada_escondida = (melhor_mlp%5)*100
+melhor_taxa_de_aprendizagem = (melhor_mlp%10)/10
+print("Melhor época de treino = ", melhor_epoca_treino)
+print("Melhor camada escondida = ",melhor_camada_escondida)
+print("Melhor taxa deaprendizagem = ",melhor_taxa_de_aprendizagem)
+print("Acuracia com os melhores parametros = ", acuracia[melhor_mlp-1]*100,'%')
